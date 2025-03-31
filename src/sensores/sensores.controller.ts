@@ -91,12 +91,13 @@ export class SensoresController {
         // Obtener las parcelas activas actuales
         const parcelasActivas = await this.prisma.parcelas.findMany();
         
-        // Añadir un campo que indique si la parcela está activa actualmente
+        // campo que indica si la parcela está activa actualmente
         const parcelasConEstado = parcelasEliminadas.map(parcela => {
-            // Verificar si existe una parcela activa con el mismo nombre y ubicación
+            // Verificar si existe una parcela activa con coordenadas muy similares
             const estaActiva = parcelasActivas.some(activa => 
-                activa.nombre === parcela.nombre && 
-                activa.ubicacion === parcela.ubicacion
+                // Comparar por coordenadas geográficas
+                Math.abs(activa.latitud - parcela.latitud) < 0.0001 && 
+                Math.abs(activa.longitud - parcela.longitud) < 0.0001
             );
             
             return {

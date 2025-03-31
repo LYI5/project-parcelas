@@ -10,16 +10,15 @@ export class SensoresService implements OnModuleInit {
 
     async actualizarSensores() {
         try {
-            // Consulta de la API externa
-            const response = await axios.get('https://moriahmkt.com/iotapp/test/');
+            const response = await axios.get('https://moriahmkt.com/iotapp/updated/');
             const data = response.data;
 
-            // guardar datos generales en la tabla SensoresGenerales si ta diferente
+            // guardar los datos generales en la tabla SensoresGenerales si no ta igual
             const ultimoSensorGeneral = await this.prisma.sensoresGenerales.findFirst({
                 orderBy: { fechaHora: 'desc' },
             });
             
-            // Verificar si hay cambios en los datos generales
+            // para ver si hay cambios en los datos generales
             if (!ultimoSensorGeneral || 
                 ultimoSensorGeneral.humedad !== data.sensores.humedad ||
                 ultimoSensorGeneral.temperatura !== data.sensores.temperatura ||
@@ -40,11 +39,11 @@ export class SensoresService implements OnModuleInit {
             }
 
             // Proceso cada parcela de la respuesta
-            // Obtiene los IDs actuales de la API para comparar después con la bd
+            // jala los IDs actuales de la API para comparar después con la bd
             const apiParcelasIds = data.parcelas.map(p => p.id);
 
             for (const parcelaData of data.parcelas) {
-                // Verificar si la parcela existe en la tabla Parcelas (por idParcela)
+                // Verificar si la parcela existe en la tabla Parcelas
                 const parcelaExistente = await this.prisma.parcelas.findUnique({
                     where: { idParcela: parcelaData.id },
                 });
@@ -58,7 +57,7 @@ export class SensoresService implements OnModuleInit {
                 };
 
                 if (parcelaExistente) {
-                    // Si la parcela ya existe, actualizar su información general
+                    // Si la parcela ya existe actualizar su informacion
                     await this.prisma.parcelas.update({
                         where: { idParcela: parcelaData.id },
                         data: {
@@ -73,13 +72,13 @@ export class SensoresService implements OnModuleInit {
                     });
                     this.logger.log(`Parcela ${parcelaData.id} actualizada.`);
 
-                    //  Comparar los datos actuales de sensores con el último registro en sensores_parcelas
+                    //  Comparar los datos actuales de sensores con el último registro en sensores generles
                     const ultimoRegistroSensor = await this.prisma.sensoresParcelas.findFirst({
                         where: { parcelaId: parcelaExistente.id },
                         orderBy: { fechaHora: 'desc' },
                     });
 
-                    // Si no hay registro previo o si alguno de los valores difiere, insertar un nuevo histórico
+                    // insertar un nuevo histórico si hay alguin nuevo o algo cambio
                     if (
                         !ultimoRegistroSensor ||
                         ultimoRegistroSensor.humedad !== sensorData.humedad ||
@@ -135,12 +134,13 @@ export class SensoresService implements OnModuleInit {
             // Obtener todas las parcelas registradas en la BD
             const parcelasRegistradas = await this.prisma.parcelas.findMany();
 
-            // Iterar sobre las parcelas registradas para detectar las que ya no aparecen en la API
             for (const parcela of parcelasRegistradas) {
                 if (!apiParcelasIds.includes(parcela.idParcela)) {
-                    // Mover la parcela a la tabla parcelas_eliminadas
+                    // mover la parcela a la tabla a eliminadas
+                    // donde se mueve
                     await this.prisma.parcelasEliminadas.create({
                         data: {
+                            idParcela: parcela.idParcela,
                             nombre: parcela.nombre,
                             ubicacion: parcela.ubicacion,
                             responsable: parcela.responsable,
@@ -151,12 +151,12 @@ export class SensoresService implements OnModuleInit {
                         },
                     });
                     
-                    // Primero eliminar todos los registros de sensores asociados a esta parcela
+                    // Primero eliminar todos los registros de sensores que se relacionan a esta parcela
                     await this.prisma.sensoresParcelas.deleteMany({
                         where: { parcelaId: parcela.id },
                     });
                     
-                    // Ahora sí podemos eliminar la parcela de la tabla Parcelas
+                    // d ahi se puede eliminar la parcela de la tabla Parcelas
                     await this.prisma.parcelas.delete({
                         where: { id: parcela.id },
                     });
@@ -173,6 +173,6 @@ export class SensoresService implements OnModuleInit {
     
     onModuleInit() {
         this.actualizarSensores();
-        setInterval(() => this.actualizarSensores(), 10 * 60 * 1000); // Cada 10 minutos
+        setInterval(() => this.actualizarSensores(), 10 * 60 * 1000);
     }
 }

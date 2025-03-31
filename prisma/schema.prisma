@@ -52,6 +52,7 @@ model SensoresParcelas {
 
 model ParcelasEliminadas {
   id               Int      @id @default(autoincrement())
+  idParcela        Int?     // Añadimos este campo
   nombre           String
   ubicacion        String
   responsable      String
