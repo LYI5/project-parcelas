@@ -23,8 +23,8 @@ model SensoresGenerales {
 }
 
 model Parcelas {
-  id               Int  @id @default(autoincrement())
-  idParcela        Int  @unique
+  id               Int                @id @default(autoincrement())
+  idParcela        Int                @unique
   nombre           String
   ubicacion        String
   responsable      String
@@ -52,7 +52,7 @@ model SensoresParcelas {
 
 model ParcelasEliminadas {
   id               Int      @id @default(autoincrement())
-  idParcela        Int?     // Añadimos este campo
+  idParcela        Int? // Añadimos este campo
   nombre           String
   ubicacion        String
   responsable      String
@@ -61,4 +61,17 @@ model ParcelasEliminadas {
   latitud          Float
   longitud         Float
   fechaEliminacion DateTime @default(now())
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  name               String   @db.VarChar(50)
+  email              String   @unique @db.VarChar(100)
+  password           String   @db.VarChar(100)
+  active             Boolean  @default(false)
+  activationToken    String?  @unique @map("activation_token") @db.VarChar(36)
+  resetPasswordToken String?  @unique @map("reset_password_token") @db.VarChar(36)
+  createdOn          DateTime @default(now()) @map("created_on")
+
+  @@map("users")
 }
