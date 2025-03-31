@@ -73,39 +73,25 @@ export class SensoresController {
 
     // Endpoint para obtener parcelas eliminadas
     @Get('parcelas-eliminadas')
-    async obtenerParcelasEliminadas(@Query('dias') dias: string = '30') {
-        const diasAtras = parseInt(dias);
-        const fechaLimite = new Date();
-        fechaLimite.setDate(fechaLimite.getDate() - diasAtras);
-    
-        // Obtener todas las parcelas eliminadas en el período
+    async obtenerParcelasEliminadas() {
+        // Obtener todas las parcelas eliminadas
         const parcelasEliminadas = await this.prisma.parcelasEliminadas.findMany({
-            where: {
-                fechaEliminacion: {
-                    gte: fechaLimite
-                }
-            },
             orderBy: { fechaEliminacion: 'desc' }
         });
         
         // Obtener las parcelas activas actuales
         const parcelasActivas = await this.prisma.parcelas.findMany();
         
-        // campo que indica si la parcela está activa actualmente
-        const parcelasConEstado = parcelasEliminadas.map(parcela => {
-            // Verificar si existe una parcela activa con coordenadas muy similares
-            const estaActiva = parcelasActivas.some(activa => 
-                // Comparar por coordenadas geográficas
-                Math.abs(activa.latitud - parcela.latitud) < 0.0001 && 
-                Math.abs(activa.longitud - parcela.longitud) < 0.0001
+        // Filtrar para mostrar solo las parcelas que siguen eliminadas
+        const parcelasActualmenteEliminadas = parcelasEliminadas.filter(parcela => {
+            // Verificar si existe una parcela activa con el mismo idParcela o coordenadas muy similares
+            return !parcelasActivas.some(activa => 
+                activa.idParcela === parcela.idParcela ||
+                (Math.abs(activa.latitud - parcela.latitud) < 0.0001 && 
+                 Math.abs(activa.longitud - parcela.longitud) < 0.0001)
             );
-            
-            return {
-                ...parcela,
-                estadoActual: estaActiva ? 'activa' : 'eliminada'
-            };
         });
         
-        return { parcelasEliminadas: parcelasConEstado };
+        return { parcelasEliminadas: parcelasActualmenteEliminadas };
     }
 }

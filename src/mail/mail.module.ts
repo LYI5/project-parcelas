@@ -10,12 +10,12 @@ import { MailService } from './mail.service';
                 port: 465,
                 selecure: true,
                 auth: {
-                    user: '{Tu_correo}',
-                    pass: 'Clave de Aplicacion',
+                    user: 'Tu_corre',
+                    pass: 'tu clave',
                 },
             },
             defaults: {
-                from: '"Soporte" <Tu_correo>',
+                from: '"Soporte" <lTu_Correo>',
             },
         }),
     ],
